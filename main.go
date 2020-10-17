@@ -13,40 +13,37 @@ import (
 type Config struct {
 	PORT        string
 	PRESENCEAPI string
+	SPACEAPI    string
 }
 
 type SpaceAPI struct {
-	API                 string   `json:"api"`
-	Space               string   `json:"space"`
-	Logo                string   `json:"logo"`
-	URL                 string   `json:"url"`
-	Location            Location `json:"location"`
-	Contact             Contact  `json:"contact"`
+	API      string `json:"api"`
+	Space    string `json:"space"`
+	Logo     string `json:"logo"`
+	URL      string `json:"url"`
+	Location struct {
+		Address string  `json:"address,omitempty"`
+		Lon     float64 `json:"lon"`
+		Lat     float64 `json:"lat"`
+	} `json:"location"`
+	Contact struct {
+		Email   string `json:"email,omitempty"`
+		Irc     string `json:"irc,omitempty"`
+		Ml      string `json:"ml,omitempty"`
+		Twitter string `json:"twitter,omitempty"`
+		Matrix  string `json:"matrix,omitempty"`
+	} `json:"contact"`
 	IssueReportChannels []string `json:"issue_report_channels"`
-	State               State    `json:"state"`
-	Projects            []string `json:"projects"`
-}
-type Location struct {
-	Address string  `json:"address"`
-	Lon     float64 `json:"lon"`
-	Lat     float64 `json:"lat"`
-}
-type Contact struct {
-	Email   string `json:"email"`
-	IRC     string `json:"irc"`
-	ML      string `json:"ml"`
-	Twitter string `json:"twitter"`
-	Matrix  string `json:"matrix"`
-}
-type Icon struct {
-	Open   string `json:"open"`
-	Closed string `json:"closed"`
-}
-type State struct {
-	Icon       Icon   `json:"icon"`
-	Open       bool   `json:"open"`
-	Message    string `json:"message"`
-	LastChange int64  `json:"lastchange"`
+	State               struct {
+		Icon struct {
+			Open   string `json:"open"`
+			Closed string `json:"closed"`
+		} `json:"icon,omitempty"`
+		Open       bool   `json:"open"`
+		Message    string `json:"message,omitempty"`
+		LastChange int64  `json:"lastchange,omitempty"`
+	} `json:"state"`
+	Projects []string `json:"projects,omitempty"`
 }
 
 type Status struct {
@@ -62,34 +59,7 @@ var (
 		PORT: "8080",
 	}
 	spaceAPI = SpaceAPI{
-		API:   "0.13",
-		Space: "FUZ",
-		Logo:  "https://fuz.re/WWW.FUZ.RE_fichiers/5c02b2a84373a.png",
-		URL:   "https://fuz.re/",
-		Location: Location{
-			Address: "11-15 rue de la Réunion, Paris 75020, FRANCE",
-			Lat:     48.85343,
-			Lon:     2.40308,
-		},
-		Contact: Contact{
-			ML:      "fuz@fuz.re",
-			Twitter: "@fuz_re",
-			Matrix:  "https://matrix.to/#/#fuz_general:matrix.fuz.re",
-		},
-		IssueReportChannels: []string{
-			"ml",
-			"twitter",
-		},
-		State: State{
-			Icon: Icon{
-				Open:   "https://presence.fuz.re/img",
-				Closed: "https://presence.fuz.re/img",
-			},
-			Message: "open under conditions: https://wiki.fuz.re/doku.php?id=map",
-		},
-		Projects: []string{
-			"https://wiki.fuz.re/doku.php?id=projets:fuz:start",
-		},
+		API: "0.13",
 	}
 )
 
@@ -101,6 +71,14 @@ func init() {
 	config.PRESENCEAPI = os.Getenv("PRESENCEAPI")
 	if config.PRESENCEAPI == "" {
 		panic("PRESENCEAPI is empty")
+	}
+	config.SPACEAPI = os.Getenv("SPACEAPI")
+	if config.SPACEAPI == "" {
+		panic("SPACEAPI is empty")
+	}
+	err := json.Unmarshal([]byte(config.SPACEAPI), &spaceAPI)
+	if err != nil {
+		panic(fmt.Sprintf("SPACEAPI is not valid JSON: %v", err))
 	}
 }
 
