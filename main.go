@@ -90,6 +90,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := http.Get(config.PRESENCEAPI)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintf(w, "err: unable to request presence API: %v", err)
 		return
 	}
 	defer resp.Body.Close()
