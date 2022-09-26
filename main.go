@@ -17,14 +17,15 @@ type Config struct {
 }
 
 type SpaceAPI struct {
-	API      string `json:"api"`
-	Space    string `json:"space"`
-	Logo     string `json:"logo"`
-	URL      string `json:"url"`
-	Location struct {
+	API              string   `json:"api"`
+	APICompatibility []string `json:"api_compatibility,omitempty"`
+	Space            string   `json:"space"`
+	Logo             string   `json:"logo"`
+	URL              string   `json:"url"`
+	Location         struct {
 		Address string  `json:"address,omitempty"`
-		Lon     float64 `json:"lon"`
 		Lat     float64 `json:"lat"`
+		Lon     float64 `json:"lon"`
 	} `json:"location"`
 	Contact struct {
 		Email   string `json:"email,omitempty"`
@@ -39,7 +40,7 @@ type SpaceAPI struct {
 			Open   string `json:"open"`
 			Closed string `json:"closed"`
 		} `json:"icon,omitempty"`
-		Open       bool   `json:"open"`
+		Open       *bool   `json:"open"`
 		Message    string `json:"message,omitempty"`
 		LastChange int64  `json:"lastchange,omitempty"`
 	} `json:"state"`
@@ -88,24 +89,20 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := http.Get(config.PRESENCEAPI)
-	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintf(w, "err: unable to request presence API: %v", err)
-		return
-	}
-	defer resp.Body.Close()
-	var status Status
-	err = json.NewDecoder(resp.Body).Decode(&status)
-	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintf(w, "err: bad json from presence API: %v", err)
-		return
-	}
-	spaceAPI.State.Open = status.FuzIsOpen
-	if status.FuzIsOpen {
-		spaceAPI.State.LastChange = status.LastOpened.Unix()
+	if err == nil {
+		defer resp.Body.Close()
+		var status Status
+		err = json.NewDecoder(resp.Body).Decode(&status)
+		if err == nil {
+			spaceAPI.State.Open = &status.FuzIsOpen
+			if status.FuzIsOpen {
+				spaceAPI.State.LastChange = status.LastOpened.Unix()
+			} else {
+				spaceAPI.State.LastChange = status.LastClosed.Unix()
+			}
+		}
 	} else {
-		spaceAPI.State.LastChange = status.LastClosed.Unix()
+		spaceAPI.State.Open = nil
 	}
 
 	w.Header().Set("Content-Type", "application/json")
